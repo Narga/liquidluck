@@ -123,6 +123,7 @@ g.static_directory = 'static'
 g.theme_directory = os.path.join(
     g.liquid_directory, '_themes', 'default'
 )
+g.theme_gallery = os.path.expanduser('~/.liquidluck-themes')
 g.resource = {}
 g.public_posts = []
 g.secure_posts = []

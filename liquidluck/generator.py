@@ -56,8 +56,28 @@ def find_settings():
     for f in config:
         path = os.path.join(os.getcwd(), f)
         if os.path.exists(path):
+            logging.info("Use local settings: %s" % path)
             return path
 
+    info = os.path.join(g.theme_gallery, 'info')
+    if not os.path.exists(info):
+        logging.warn("Can't find settings")
+        return None
+
+    f = open(info)
+    theme = os.path.join(g.theme_gallery, f.read())
+    f.close()
+
+    if not os.path.exists(theme):
+        logging.warn("Can't find settings")
+        return None
+
+    for f in config:
+        path = os.path.join(theme, f)
+        if os.path.exists(path):
+            logging.info("Use global settings: %s" % path)
+            return path
+    logging.warn("Can't find settings")
     return None
 
 

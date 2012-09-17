@@ -191,9 +191,14 @@ def load_jinja():
     })
 
     #: load theme variables
-    config = settings.theme.get('vars') or {}
-    for item in ['name', 'version', 'author', 'website']:
-        config[item] = settings.theme.get(item)
+    config = {}
+    theme_config = os.path.join(theme, 'theme.py')
+    if os.path.exists(theme_config):
+        execfile(theme_config, {}, config)
+
+    config.update(settings.theme.get('vars') or {})
+    #: keep namespace to the latest variables
+    settings.theme['vars'] = config
     jinja.globals.update({'theme': config})
 
     #: default variables

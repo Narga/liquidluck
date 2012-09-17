@@ -3,6 +3,15 @@ Changelog
 
 All history since the new Felix Felicis are listed here:
 
+
+Version 3.4
+-------------
+
++ support theme settings
++ more powerful global theme
++ ``settings.py`` in theme should change name to ``theme.py``
+
+
 Version 3.3
 -------------
 

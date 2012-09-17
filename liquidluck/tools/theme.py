@@ -109,11 +109,17 @@ def install(keyword=None, widely=False):
         output = os.path.expanduser('~/.liquidluck-themes/%s' % keyword)
     else:
         output = '_themes/%s' % keyword
+
     import subprocess
     if os.path.exists(output):
         subprocess.call(['git', 'pull'], cwd=output)
     else:
         subprocess.call(['git', 'clone', repo, output])
+
+    #: set default theme
+    f = open(os.path.expanduser('~/.liquidluck-themes/info'), 'w')
+    f.write(keyword)
+    f.close()
 
 
 if __name__ == '__main__':

@@ -54,8 +54,14 @@ def __load_themes():
     return __filter_themes(content)
 
 
+def __installed_themes():
+    names = os.listdir(g.theme_gallery)
+    names.remove('info')
+    return names
+
+
 SEARCH_TEMPLATE = '''
-Theme: %(name)s
+Theme: %(name)s%(icon)s
 Author: %(username)s
 Description: %(description)s
 Updated: %(pushed)s
@@ -76,11 +82,16 @@ def search(keyword=None, clean=False, force=False):
             if keyword in name:
                 available[name] = themes[name]
 
+    installed = __installed_themes()
     for name in (available or themes):
         if clean:
             print(name)
         else:
             theme = themes[name]
+            if name in installed:
+                theme['icon'] = ' (installed)'
+            else:
+                theme['icon'] = ''
             print(SEARCH_TEMPLATE % theme)
     return
 

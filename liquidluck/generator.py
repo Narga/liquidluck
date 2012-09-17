@@ -48,44 +48,94 @@ def create_settings(filepath):
     f.close()
 
 
-def find_settings():
+def get_settings_path(base_path):
     config = [
         'settings.yml', 'settings.json', 'settings.yaml', 'settings.py',
     ]
 
     for f in config:
-        path = os.path.join(os.getcwd(), f)
+        path = os.path.join(base_path, f)
         if os.path.exists(path):
-            logging.info("Use local settings: %s" % path)
             return path
+    return None
+
+
+def find_settings_path():
+    #: find local directory
+    path = get_settings_path(os.getcwd())
+    if path:
+        logging.info("Use local settings: %s" % path)
+        return path
 
     info = os.path.join(g.theme_gallery, 'info')
     if not os.path.exists(info):
-        logging.warn("Can't find settings")
-        return None
+        raise OSError("Can't find settings")
 
     f = open(info)
     theme = os.path.join(g.theme_gallery, f.read())
     f.close()
 
     if not os.path.exists(theme):
-        logging.warn("Can't find settings")
-        return None
+        raise OSError("Can't find settings")
 
-    for f in config:
-        path = os.path.join(theme, f)
-        if os.path.exists(path):
-            logging.info("Use global settings: %s" % path)
-            return path
-    logging.warn("Can't find settings")
-    return None
+    path = get_settings_path(theme)
+    if path:
+        logging.info("Use global settings: %s" % path)
+        return path
+    raise OSError("Can't find settings")
+
+
+def parse_py_settings(path):
+    config = {}
+    execfile(path, {}, config)
+    return config
+
+
+def parse_yaml_settings(path):
+    from yaml import load
+    try:
+        from yaml import CLoader
+        MyLoader = CLoader
+    except ImportError:
+        from yaml import Loader
+        MyLoader = Loader
+
+    config = load(open(path), MyLoader)
+    return config
+
+
+def parse_json_settings(path):
+    try:
+        import json
+    except ImportError:
+        import simplejson
+        json = simplejson
+
+    f = open(path)
+    content = f.read()
+    f.close()
+    config = json.loads(content)
+    return config
 
 
 def load_settings(path):
     if not path:
-        path = find_settings()
+        path = find_settings_path()
 
-    def update_settings(config):
+    def parse_settings(path):
+        if path.endswith('.py'):
+            return parse_py_settings(path)
+        elif path.endswith('.json'):
+            return parse_json_settings(path)
+        return parse_yaml_settings(path)
+
+    def update_settings(arg):
+        if not arg:
+            return
+        if isinstance(arg, dict):
+            config = arg
+        else:
+            config = parse_settings(arg)
         for key in config:
             setting = config[key]
             if isinstance(setting, dict) and key in settings:
@@ -93,45 +143,19 @@ def load_settings(path):
             else:
                 settings[key] = setting
 
-    def load_py_settings(path):
-        config = {}
-        execfile(path, {}, config)
-        update_settings(config)
-
-    def load_yaml_settings(path):
-        from yaml import load
-        try:
-            from yaml import CLoader
-            MyLoader = CLoader
-        except ImportError:
-            from yaml import Loader
-            MyLoader = Loader
-
-        config = load(open(path), MyLoader)
-        update_settings(config)
-
-    def load_json_settings(path):
-        try:
-            import json
-        except ImportError:
-            import simplejson
-            json = simplejson
-
-        f = open(path)
-        content = f.read()
-        f.close()
-        config = json.loads(content)
-        update_settings(config)
-
     #: preload default config
-    load_py_settings(os.path.join(PROJDIR, 'tools', '_settings.py'))
+    update_settings(os.path.join(PROJDIR, 'tools', '_settings.py'))
 
-    if path.endswith('.py'):
-        load_py_settings(path)
-    elif path.endswith('.json'):
-        load_json_settings(path)
+    if path.startswith(g.theme_gallery):
+        update_settings(path)
     else:
-        load_yaml_settings(path)
+        config = parse_settings(path)
+        theme_name = config.get('theme', {}).get('name')
+        #: load theme config first
+        theme_settings = get_settings_path(find_theme(theme_name))
+        update_settings(theme_settings)
+        #: load user config
+        update_settings(config)
 
     g.output_directory = os.path.abspath(settings.config.get('output'))
     g.static_directory = os.path.abspath(settings.config.get('static'))
@@ -183,7 +207,8 @@ def write_posts():
         writer.run()
 
 
-def build(config='settings.py'):
+def build(config=None):
+    print config
     load_settings(config)
     load_posts(settings.config.get('source'))
     write_posts()

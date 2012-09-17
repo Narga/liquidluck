@@ -135,11 +135,13 @@ class Pagination(object):
         return self.total_items[start:end]
 
 
-def find_theme():
-    theme_name = settings.theme.get('name', 'default')
+def find_theme(theme_name=None):
+    if not theme_name:
+        theme_name = settings.theme.get('name', 'default')
+
     theme_gallary = [
         os.path.join(os.path.abspath('_themes'), theme_name),
-        os.path.expanduser('~/.liquidluck-themes/%s' % theme_name),
+        os.path.join(g.theme_gallery, theme_name),
         os.path.join(g.liquid_directory, '_themes', theme_name),
     ]
     for path in theme_gallary:
@@ -189,15 +191,9 @@ def load_jinja():
     })
 
     #: load theme variables
-    config = {}
-    theme_config = os.path.join(theme, 'settings.py')
-    if os.path.exists(theme_config):
-        execfile(theme_config, {}, config)
-
-    #: user can reset theme variables
-    config.update(settings.theme.get('vars') or {})
-    #: keep namespace to the latest variables
-    settings.theme['vars'] = config
+    config = settings.theme.get('vars') or {}
+    for item in ['name', 'version', 'author', 'website']:
+        config[item] = settings.theme.get(item)
     jinja.globals.update({'theme': config})
 
     #: default variables

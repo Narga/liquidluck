@@ -122,7 +122,7 @@ def main():
     if command == 'init':
         generator.create_settings(arg_settings)
     elif command == 'build':
-        arg_settings = arg_settings or generator.find_settings()
+        arg_settings = arg_settings or generator.find_settings_path()
         if not arg_settings:
             answer = raw_input(
                 "Can't find your setting files, "
@@ -135,7 +135,7 @@ def main():
             g.detail_logging = arg_verbose
             generator.build(arg_settings)
     elif command == 'server':
-        arg_settings = arg_settings or generator.find_settings()
+        arg_settings = arg_settings or generator.find_settings_path()
         if arg_settings and os.path.exists(arg_settings):
             generator.load_settings(arg_settings)
         else:
@@ -159,7 +159,7 @@ def main():
     elif command == 'webhook':
         action = (args['start'] and 'start') or (args['stop'] and 'stop') \
                 or (args['restart'] and 'restart')
-        arg_settings = arg_settings or generator.find_settings()
+        arg_settings = arg_settings or generator.find_settings_path()
         webhook.webhook(arg_port, action, arg_settings)
 
 

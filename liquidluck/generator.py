@@ -85,49 +85,52 @@ def find_settings_path():
     raise OSError("Can't find settings")
 
 
-def parse_py_settings(path):
-    config = {}
-    execfile(path, {}, config)
-    return config
+def parse_settings(path, filetype='yaml'):
+    if path.endswith('.py'):
+        filetype = 'python'
+    elif path.endswith('.json'):
+        filetype = 'json'
 
+    def parse_py_settings(path):
+        config = {}
+        execfile(path, {}, config)
+        return config
 
-def parse_yaml_settings(path):
-    from yaml import load
-    try:
-        from yaml import CLoader
-        MyLoader = CLoader
-    except ImportError:
-        from yaml import Loader
-        MyLoader = Loader
+    def parse_yaml_settings(path):
+        from yaml import load
+        try:
+            from yaml import CLoader
+            MyLoader = CLoader
+        except ImportError:
+            from yaml import Loader
+            MyLoader = Loader
 
-    config = load(open(path), MyLoader)
-    return config
+        config = load(open(path), MyLoader)
+        return config
 
+    def parse_json_settings(path):
+        try:
+            import json
+        except ImportError:
+            import simplejson
+            json = simplejson
 
-def parse_json_settings(path):
-    try:
-        import json
-    except ImportError:
-        import simplejson
-        json = simplejson
+        f = open(path)
+        content = f.read()
+        f.close()
+        config = json.loads(content)
+        return config
 
-    f = open(path)
-    content = f.read()
-    f.close()
-    config = json.loads(content)
-    return config
+    if filetype == 'python':
+        return parse_py_settings(path)
+    elif filetype == 'json':
+        return parse_json_settings(path)
+    return parse_yaml_settings(path)
 
 
 def load_settings(path):
     if not path:
         path = find_settings_path()
-
-    def parse_settings(path):
-        if path.endswith('.py'):
-            return parse_py_settings(path)
-        elif path.endswith('.json'):
-            return parse_json_settings(path)
-        return parse_yaml_settings(path)
 
     def update_settings(arg):
         if not arg:
@@ -208,7 +211,6 @@ def write_posts():
 
 
 def build(config=None):
-    print config
     load_settings(config)
     load_posts(settings.config.get('source'))
     write_posts()

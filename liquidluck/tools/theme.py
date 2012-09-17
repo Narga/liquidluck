@@ -119,6 +119,10 @@ def install(keyword=None, widely=False):
                 % theme
     if widely:
         output = os.path.join(g.theme_gallery, keyword)
+        #: set default theme
+        f = open(os.path.join(g.theme_gallery, 'info'), 'w')
+        f.write(keyword)
+        f.close()
     else:
         output = '_themes/%s' % keyword
 
@@ -127,11 +131,6 @@ def install(keyword=None, widely=False):
         subprocess.call(['git', 'pull'], cwd=output)
     else:
         subprocess.call(['git', 'clone', repo, output])
-
-    #: set default theme
-    f = open(os.path.join(g.theme_gallery, 'info'), 'w')
-    f.write(keyword)
-    f.close()
 
 
 if __name__ == '__main__':
